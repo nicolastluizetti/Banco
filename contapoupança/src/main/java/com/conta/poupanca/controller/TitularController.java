@@ -13,13 +13,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.conta.poupanca.Exception.EntidadeEmUsoException;
 import com.conta.poupanca.Exception.EntidadeNaoEncontradaExcption;
 import com.conta.poupanca.model.Conta;
 import com.conta.poupanca.model.Titular;
 import com.conta.poupanca.repository.Titularrepository;
-
+@RestController
+@RequestMapping(value = "/titulares")
 public class TitularController {
 	@Autowired
 	private Titularrepository titularRepository;
