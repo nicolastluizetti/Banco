@@ -14,10 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.conta.poupanca.Exception.EntidadeEmUsoException;
-import com.conta.poupanca.Exception.EntidadeNaoEncontradaExcption;
 import com.conta.poupanca.model.Conta;
 import com.conta.poupanca.model.Titular;
 import com.conta.poupanca.repository.Titularrepository;
@@ -28,11 +27,13 @@ public class TitularController {
 	private Titularrepository titularRepository;
 	
 	
+	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@GetMapping
 	public List<Titular> listar() {
 		return titularRepository.findAll();
 	}
 	
+	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@GetMapping("/{titularId}")
 	public ResponseEntity<Titular> buscar(@PathVariable Long titularId) {
 		Optional<Titular> conta = titularRepository.findById(titularId);
@@ -40,27 +41,24 @@ public class TitularController {
 		if (conta != null) {
 			return ResponseEntity.ok(conta.get());
 		}
-		
 		return ResponseEntity.notFound().build();
-	}
+		}
 	
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@PostMapping
 	public ResponseEntity<?> adicionar(@RequestBody Titular titular) {
-		try {
+		
 			titular = titularRepository.save(titular);
-			
 			return ResponseEntity.status(HttpStatus.CREATED)
 					.body(titular);
-		} catch (EntidadeNaoEncontradaExcption e) {
-			return ResponseEntity.badRequest()
-					.body(e.getMessage());
-		}
+	
 	}
 	
+	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@PutMapping("/{contaId}")
 	public ResponseEntity<?> atualizar(@PathVariable Long titularid,
 			@RequestBody Conta conta) {
-		try {
+		
 			Titular titularAtual = titularRepository.findById(titularid).orElse(null);
 			
 			if (titularAtual != null) {
@@ -72,29 +70,21 @@ public class TitularController {
 			
 			return ResponseEntity.notFound().build();
 		
-		} catch (EntidadeNaoEncontradaExcption e) {
-			return ResponseEntity.badRequest()
-					.body(e.getMessage());
+		
 		}
-	}
 	
+	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@DeleteMapping("/{contaId}")
 	public ResponseEntity<Conta> remover(@PathVariable Long contaId) {
-		try {
+		
 			titularRepository.deleteById(contaId);	
 			return ResponseEntity.noContent().build();
-			
-		} catch (EntidadeNaoEncontradaExcption e) {
-			return ResponseEntity.notFound().build();
-			
-		} catch (EntidadeEmUsoException e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
-		}
+	
 	}
 	
 
 		
-	
+	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@GetMapping("/{titularcpf}")
 	public Titular cpf(long cpf) {
 		return titularRepository.findBycpf(cpf);

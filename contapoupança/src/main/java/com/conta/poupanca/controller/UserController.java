@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.conta.poupanca.Exception.EntidadeEmUsoException;
@@ -36,6 +37,7 @@ public class UserController {
 			return userRepository.findAll();
 		}
 		
+		@ResponseStatus(HttpStatus.NOT_FOUND)
 		@GetMapping("/{userId}")
 		public ResponseEntity<User> buscar(@PathVariable Long userId) {
 			Optional<User> user = userRepository.findById(userId);
@@ -47,52 +49,42 @@ public class UserController {
 			return ResponseEntity.notFound().build();
 		}
 		
+		@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 		@PostMapping
 	    public ResponseEntity<?> adicionar(@RequestBody User user) {
-	        try {
-	     
-
+	        
 	            user = userRepository.save(user);
-
-	            return ResponseEntity.status(HttpStatus.CREATED).body(user);
-	        } catch (Exception e) {
-	            return ResponseEntity.badRequest().body("Erro ao cadastrar: " + e.getMessage());
-	        }
-	    }
+	            return ResponseEntity.status(HttpStatus.CREATED)
+						.body(user);
 		
+
+	           
+	    }
+		@ResponseStatus(HttpStatus.NOT_FOUND)
 		@PutMapping("/{userId}")
-		public ResponseEntity<?> atualizar(@PathVariable Long userid,
+		public User atualizar(@PathVariable Long userid,
 				@RequestBody Conta user) {
-			try {
 				User userAtual = userRepository.findById(userid).orElse(null);
 				
 				if (userAtual != null) {
 					BeanUtils.copyProperties(user, userAtual, "id");
 					
 					userAtual = userRepository.save(userAtual);
-					return ResponseEntity.ok(userAtual);
+					return userRepository.save(userAtual);
 				}
+				return userRepository.save(userAtual);
 				
-				return ResponseEntity.notFound().build();
 			
-			} catch (EntidadeNaoEncontradaExcption e) {
-				return ResponseEntity.badRequest()
-						.body(e.getMessage());
-			}
 		}
 		
+		@ResponseStatus(HttpStatus.NOT_FOUND)
 		@DeleteMapping("/{userId}")
 		public ResponseEntity<Conta> remover(@PathVariable Long userId) {
-			try {
+			
 				userRepository.deleteById(userId);	
 				return ResponseEntity.noContent().build();
 				
-			} catch (EntidadeNaoEncontradaExcption e) {
-				return ResponseEntity.notFound().build();
-				
-			} catch (EntidadeEmUsoException e) {
-				return ResponseEntity.status(HttpStatus.CONFLICT).build();
-			}
+			
 		}
 		
 
