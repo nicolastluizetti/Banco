@@ -11,7 +11,7 @@ public interface ContaRepository extends JpaRepository<Conta, Long>{
 	
 	
 
-	Conta findByTitular(Titular titular);
+	
 	
 	
 

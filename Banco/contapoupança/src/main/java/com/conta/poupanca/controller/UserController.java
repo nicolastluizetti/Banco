@@ -17,81 +17,81 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.conta.poupanca.Exception.EntidadeEmUsoException;
-import com.conta.poupanca.Exception.EntidadeNaoEncontradaExcption;
+import com.conta.poupanca.Exception.UserNaoencontradoException;
+import com.conta.poupanca.Exception.UseremusoException;
 import com.conta.poupanca.model.Conta;
 import com.conta.poupanca.model.User;
 import com.conta.poupanca.repository.UserRepository;
 
 @RestController
-@RequestMapping(value = "/user")
+@RequestMapping("/users")
 public class UserController {
-		
-		@Autowired
-		private UserRepository userRepository;
 
-		
-		
-		@GetMapping
-		public List<User> listar() {
-			return userRepository.findAll();
-		}
-		
-		@ResponseStatus(HttpStatus.NOT_FOUND)
-		@GetMapping("/{userId}")
-		public ResponseEntity<User> buscar(@PathVariable Long userId) {
-			Optional<User> user = userRepository.findById(userId);
-			
-			if (user != null) {
-				return ResponseEntity.ok(user.get());
-			}
-			
-			return ResponseEntity.notFound().build();
-		}
-		
-		@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-		@PostMapping
-	    public ResponseEntity<?> adicionar(@RequestBody User user) {
-	        
-	            user = userRepository.save(user);
-	            return ResponseEntity.status(HttpStatus.CREATED)
-						.body(user);
-		
+    @Autowired
+    private UserRepository userRepository;
 
-	           
-	    }
-		@ResponseStatus(HttpStatus.NOT_FOUND)
-		@PutMapping("/{userId}")
-		public User atualizar(@PathVariable Long userid,
-				@RequestBody Conta user) {
-				User userAtual = userRepository.findById(userid).orElse(null);
-				
-				if (userAtual != null) {
-					BeanUtils.copyProperties(user, userAtual, "id");
-					
-					userAtual = userRepository.save(userAtual);
-					return userRepository.save(userAtual);
-				}
-				return userRepository.save(userAtual);
-				
-			
-		}
-		
-		@ResponseStatus(HttpStatus.NOT_FOUND)
-		@DeleteMapping("/{userId}")
-		public ResponseEntity<Conta> remover(@PathVariable Long userId) {
-			
-				userRepository.deleteById(userId);	
-				return ResponseEntity.noContent().build();
-				
-			
-		}
-		
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<User> listar() {
+        try {
+            return userRepository.findAll();
+        } catch (Exception e) {
+            throw new UserNaoencontradoException("Erro ao listar usuários: " + e.getMessage());
+        }
+    }
 
-			
-		
-		
-		
-	}
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> buscar(@PathVariable Long userId) {
+        try {
+            Optional<User> user = userRepository.findById(userId);
+            if (user.isPresent()) {
+                return ResponseEntity.ok(user.get());
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                 .body("Usuário com ID " + userId + " não encontrado.");
+        } catch (Exception e) {
+            throw new UserNaoencontradoException("Erro ao buscar usuário: " + e.getMessage());
+        }
+    }
 
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public User adicionar(@RequestBody User user) {
+        try {
+            return userRepository.save(user);
+        } catch (Exception e) {
+            throw new UserNaoencontradoException("Erro ao adicionar usuário: " + e.getMessage());
+        }
+    }
 
+    @PutMapping("/{userId}")
+    public ResponseEntity<?> atualizar(@PathVariable Long userId, @RequestBody User user) {
+        try {
+            Optional<User> optionalUser = userRepository.findById(userId);
+            if (!optionalUser.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                     .body("Usuário com ID " + userId + " não encontrado.");
+            }
+
+            User userAtual = optionalUser.get();
+            BeanUtils.copyProperties(user, userAtual, "id");
+            User atualizado = userRepository.save(userAtual);
+            return ResponseEntity.ok(atualizado);
+        } catch (Exception e) {
+            throw new UserNaoencontradoException("Erro ao atualizar usuário: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void remover(@PathVariable Long userId) {
+        try {
+            if (!userRepository.existsById(userId)) {
+                throw new UserNaoencontradoException("Usuário com ID " + userId + " não encontrado.");
+            }
+            userRepository.deleteById(userId);
+        } catch (Exception e) {
+            throw new UserNaoencontradoException("Erro ao remover usuário: " + e.getMessage());
+        }
+    }
+}

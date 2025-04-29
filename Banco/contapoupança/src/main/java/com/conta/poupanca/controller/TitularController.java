@@ -17,78 +17,97 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.conta.poupanca.Exception.TitularNaoencontradoException;
 import com.conta.poupanca.model.Conta;
 import com.conta.poupanca.model.Titular;
 import com.conta.poupanca.repository.Titularrepository;
 @RestController
-@RequestMapping(value = "/titulares")
+@RequestMapping("/titulares")
 public class TitularController {
-	@Autowired
-	private Titularrepository titularRepository;
-	
-	
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@GetMapping
-	public List<Titular> listar() {
-		return titularRepository.findAll();
-	}
-	
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@GetMapping("/{titularId}")
-	public ResponseEntity<Titular> buscar(@PathVariable Long titularId) {
-		Optional<Titular> conta = titularRepository.findById(titularId);
-		
-		if (conta != null) {
-			return ResponseEntity.ok(conta.get());
-		}
-		return ResponseEntity.notFound().build();
-		}
-	
-	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-	@PostMapping
-	public ResponseEntity<?> adicionar(@RequestBody Titular titular) {
-		
-			titular = titularRepository.save(titular);
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(titular);
-	
-	}
-	
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@PutMapping("/{contaId}")
-	public ResponseEntity<?> atualizar(@PathVariable Long titularid,
-			@RequestBody Conta conta) {
-		
-			Titular titularAtual = titularRepository.findById(titularid).orElse(null);
-			
-			if (titularAtual != null) {
-				BeanUtils.copyProperties(conta, titularAtual, "id");
-				
-				titularAtual = titularRepository.save(titularAtual);
-				return ResponseEntity.ok(titularAtual);
-			}
-			
-			return ResponseEntity.notFound().build();
-		
-		
-		}
-	
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@DeleteMapping("/{contaId}")
-	public ResponseEntity<Conta> remover(@PathVariable Long contaId) {
-		
-			titularRepository.deleteById(contaId);	
-			return ResponseEntity.noContent().build();
-	
-	}
-	
 
-		
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@GetMapping("/{titularcpf}")
-	public Titular cpf(long cpf) {
-		return titularRepository.findBycpf(cpf);
-	}
-	
+    @Autowired
+    private Titularrepository titularRepository;
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<Titular> listar() {
+        try {
+            return titularRepository.findAll();
+        } catch (Exception e) {
+            throw new TitularNaoencontradoException("Erro ao listar titulares: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{titularId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<?> buscar(@PathVariable Long titularId) {
+        try {
+            Optional<Titular> titular = titularRepository.findById(titularId);
+            if (titular.isPresent()) {
+                return ResponseEntity.ok(titular.get());
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                 .body("Titular com ID " + titularId + " não encontrado.");
+        } catch (Exception e) {
+            throw new TitularNaoencontradoException("Erro ao buscar titular: " + e.getMessage());
+        }
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Titular adicionar(@RequestBody Titular titular) {
+        try {
+            return titularRepository.save(titular);
+        } catch (Exception e) {
+            throw new TitularNaoencontradoException("Erro ao adicionar titular: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{titularId}")
+    public ResponseEntity<?> atualizar(@PathVariable Long titularId,
+                                       @RequestBody Conta conta) {
+        try {
+            Optional<Titular> optionalTitular = titularRepository.findById(titularId);
+            if (!optionalTitular.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                     .body("Titular com ID " + titularId + " não encontrado.");
+            }
+
+            Titular titularAtual = optionalTitular.get();
+            BeanUtils.copyProperties(conta, titularAtual, "id");
+            Titular atualizado = titularRepository.save(titularAtual);
+
+            return ResponseEntity.ok(atualizado);
+        } catch (Exception e) {
+            throw new TitularNaoencontradoException("Erro ao atualizar titular: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{titularId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void remover(@PathVariable Long titularId) {
+        try {
+            if (!titularRepository.existsById(titularId)) {
+                throw new TitularNaoencontradoException("Titular com ID " + titularId + " não encontrado.");
+            }
+            titularRepository.deleteById(titularId);
+        } catch (Exception e) {
+            throw new TitularNaoencontradoException("Erro ao remover titular: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/cpf/{cpf}")
+    public ResponseEntity<?> buscarPorCpf(@PathVariable long cpf) {
+        try {
+            Optional<Titular> titular = titularRepository.findByCpf(cpf);
+            if (titular == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                     .body("Titular com CPF " + cpf + " não encontrado.");
+            }
+            return ResponseEntity.ok(titular);
+        } catch (Exception e) {
+            throw new TitularNaoencontradoException("Erro ao buscar titular por CPF: " + e.getMessage());
+        }
+    }
 }
 

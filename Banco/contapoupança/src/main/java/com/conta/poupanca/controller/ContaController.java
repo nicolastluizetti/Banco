@@ -34,7 +34,6 @@ public class ContaController {
 	}
 	
 	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@PostMapping
 	@GetMapping("/{contaId}")
 	public ResponseEntity<Conta> buscar(@PathVariable Long contaId) {
 		Optional<Conta> conta = contaRepository.findById(contaId);
@@ -46,7 +45,15 @@ public class ContaController {
 		return ResponseEntity.notFound().build();
 	}
 	
-	
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+	@PostMapping
+	public ResponseEntity<?> adicionar(@RequestBody Conta conta) {
+			conta = contaRepository.save(conta);
+			
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body(conta);
+		
+	}
 	
 	@ResponseStatus(HttpStatus.CREATED)
 	@PutMapping("/{contaId}")
@@ -75,12 +82,6 @@ public class ContaController {
 			return ResponseEntity.noContent().build();
 	}
 	
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	@GetMapping("/{titular}")
-	public Conta achar(@PathVariable Titular titular) {
-		return contaRepository.findByTitular(titular);
-		
-	}
 	
 }
 
